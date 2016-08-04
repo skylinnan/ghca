@@ -1,7 +1,8 @@
 package timeoutmap
 
 import (
-	"fmt"
+	//"fmt"
+	"sync"
 	"time"
 )
 
@@ -9,55 +10,65 @@ type DataValue struct {
 	Timestamp int64
 	Ch        chan bool
 }
-
-var tmap map[string]DataValue
-
-func New() {
-	tmap = make(map[string]DataValue)
+type TTMap struct {
+	tmap    map[string]DataValue
+	lock    sync.Mutex
+	timeout int
 }
-func Insert(k string) bool {
+
+func NewMap(t int) *TTMap {
+	mm := new(TTMap)
+	mm.tmap = make(map[string]DataValue)
+	mm.timeout = t
+	return mm
+}
+func (tt *TTMap) Insert(k string) bool {
 	var datavalue DataValue
-	timenow := time.Now().Unix()
-	_, ok := tmap[k]
+	tt.lock.Lock()
+	defer tt.lock.Unlock()
+	_, ok := tt.tmap[k]
 	if ok {
 		return false
 	} else {
+		timenow := time.Now().Unix()
 		datavalue.Timestamp = timenow
 		datavalue.Ch = make(chan bool, 1)
-		tmap[k] = datavalue
-		fmt.Println("insert")
-		go timeoutscan(k, datavalue.Ch)
+		tt.tmap[k] = datavalue
+		//fmt.Println("insert")
+		go tt.timeoutscan(k, datavalue.Ch)
 		//tmap[k] = timenow
 		return true
 	}
 }
-func Erase(k string) bool {
-	data, ok := tmap[k]
+func (tt *TTMap) Erase(k string) bool {
+	tt.lock.Lock()
+	defer tt.lock.Unlock()
+	data, ok := tt.tmap[k]
 	if ok {
 		data.Ch <- true
-		delete(tmap, k)
-		fmt.Println("erase")
+		delete(tt.tmap, k)
+		//fmt.Println("erase")
 		return true
 	} else {
 		return false
 	}
 }
 
-func timeoutscan(k string, ch chan bool) {
+func (tt *TTMap) timeoutscan(k string, ch chan bool) {
 	timeout := make(chan bool, 1)
 	go func() {
-		time.Sleep(1 * time.Second) // 等待1秒钟
+		time.Sleep(time.Duration(tt.timeout) * time.Second) // 等待1秒钟
 		timeout <- true
-		fmt.Println("timeout")
+		//fmt.Println("timeout")
 	}()
 	select {
 	case <-ch:
-		fmt.Println("erase ch")
+		//fmt.Println("erase ch")
 		return
 	case <-timeout:
 		// 一直没有从ch中读取到数据，但从timeout中读取到了数据
-		fmt.Println("start to timeout erase")
-		Erase(k)
-		fmt.Println("timeout:", k)
+		//fmt.Println("start to timeout erase")
+		tt.Erase(k)
+		//fmt.Println("timeout:", k)
 	}
 }
