@@ -23,8 +23,9 @@ func Insert(k string) bool {
 		return false
 	} else {
 		datavalue.Timestamp = timenow
-		datavalue.Ch = make(chan bool)
+		datavalue.Ch = make(chan bool, 1)
 		tmap[k] = datavalue
+		fmt.Println("insert")
 		go timeoutscan(k, datavalue.Ch)
 		//tmap[k] = timenow
 		return true
@@ -35,6 +36,7 @@ func Erase(k string) bool {
 	if ok {
 		data.Ch <- true
 		delete(tmap, k)
+		fmt.Println("erase")
 		return true
 	} else {
 		return false
@@ -44,14 +46,17 @@ func Erase(k string) bool {
 func timeoutscan(k string, ch chan bool) {
 	timeout := make(chan bool, 1)
 	go func() {
-		time.Sleep(1e9) // 等待1秒钟
+		time.Sleep(1 * time.Second) // 等待1秒钟
 		timeout <- true
+		fmt.Println("timeout")
 	}()
 	select {
 	case <-ch:
+		fmt.Println("erase ch")
 		return
 	case <-timeout:
 		// 一直没有从ch中读取到数据，但从timeout中读取到了数据
+		fmt.Println("start to timeout erase")
 		Erase(k)
 		fmt.Println("timeout:", k)
 	}
