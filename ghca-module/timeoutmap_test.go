@@ -1,14 +1,15 @@
 package timeoutmap
 
 import (
-	"fmt"
 	"strconv"
 	"sync"
 	"testing"
 )
 
+var exit chan bool
+
 func BenchmarkTimeoutMapTest(b *testing.B) {
-	tt := NewMap(1)
+	tt := NewMap(1, 100000)
 	for i := 1; i < b.N; i++ {
 		v := strconv.Itoa(i)
 		tt.Insert(v)
@@ -38,13 +39,16 @@ func BenchmarkTimeoutGoTest(b *testing.B) {
 	}
 }
 func TestMap(t *testing.T) {
-	tt := NewMap(1)
-	for i := 1; i < 10000; i++ {
+	tt := NewMap(1, 1000)
+	for i := 1; i < 1000; i++ {
 		tt.Insert(strconv.Itoa(i))
 		//tt.Erase(strconv.Itoa(i))
 		if i%2 == 0 {
 			tt.Erase(strconv.Itoa(i))
 		}
 	}
-	fmt.Println(len(tt.tmap))
+	/*for range tt.Datachan {
+		data := <-tt.Datachan
+		fmt.Println(data)
+	}*/
 }

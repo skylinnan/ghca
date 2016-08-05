@@ -11,15 +11,17 @@ type DataValue struct {
 	Ch        chan bool
 }
 type TTMap struct {
-	tmap    map[string]DataValue
-	lock    sync.Mutex
-	timeout int
+	tmap     map[string]DataValue
+	lock     sync.Mutex
+	timeout  int
+	Datachan chan string
 }
 
-func NewMap(t int) *TTMap {
+func NewMap(t int, cache int) *TTMap {
 	mm := new(TTMap)
 	mm.tmap = make(map[string]DataValue)
 	mm.timeout = t
+	mm.Datachan = make(chan string, cache)
 	return mm
 }
 func (tt *TTMap) Insert(k string) bool {
@@ -69,6 +71,7 @@ func (tt *TTMap) timeoutscan(k string, ch chan bool) {
 		// 一直没有从ch中读取到数据，但从timeout中读取到了数据
 		//fmt.Println("start to timeout erase")
 		tt.Erase(k)
+		tt.Datachan <- k
 		//fmt.Println("timeout:", k)
 	}
 }
