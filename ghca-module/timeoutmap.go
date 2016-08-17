@@ -6,6 +6,53 @@ import (
 	"time"
 )
 
+var mutex sync.Mutex
+var tmap map[string]*TT
+var timespan time.Duration
+
+type TT struct {
+	t    *time.Timer
+	key  string
+	flag bool
+}
+
+func (tt *TT) f() {
+	mutex.Lock()
+	if tt.flag {
+		delete(tmap, tt.key)
+	}
+	mutex.Unlock()
+}
+
+func NewTT(s string) {
+	tt := new(TT)
+	tt.key = s
+	tt.flag = true
+	mutex.Lock()
+	tmap[s] = tt
+	mutex.Unlock()
+	tt.t = time.AfterFunc(timespan*time.Second, tt.f)
+}
+func Erase(key string) {
+	mutex.Lock()
+	value, ok := tmap[key]
+	if ok {
+		value.t.Stop()
+		value.flag = false
+		//fmt.Println("erase", value.key)
+		delete(tmap, key)
+	}
+	mutex.Unlock()
+}
+func Find(key string) (*TT, bool) {
+	value, ok := tmap[key]
+	return value, ok
+}
+func Init(t int64) {
+	tmap = make(map[string]*TT)
+	timespan = time.Duration(t)
+}
+
 type DataValue struct {
 	Timestamp int64
 	Ch        chan bool

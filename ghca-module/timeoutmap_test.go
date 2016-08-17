@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 )
 
 var exit chan bool
@@ -38,14 +39,33 @@ func BenchmarkTimeoutGoTest(b *testing.B) {
 		lock.Unlock()
 	}
 }
+
 func TestMap(t *testing.T) {
-	tt := NewMap(1, 1000)
+	/*tt := NewMap(1, 1000)
 	for i := 1; i < 1000; i++ {
 		tt.Insert(strconv.Itoa(i))
 		//tt.Erase(strconv.Itoa(i))
 		if i%2 == 0 {
 			tt.Erase(strconv.Itoa(i))
 		}
+	}*/
+
+	Init(5)
+	NewTT("a")
+	time.Sleep(2 * time.Second)
+	//Erase("a")
+	_, ok := Find("a")
+	if ok {
+		t.Log("pass")
+	} else {
+		t.Error("test failed")
+	}
+	time.Sleep(4 * time.Second)
+	_, ok = Find("a")
+	if ok {
+		t.Error("test timeout failed")
+	} else {
+		t.Log("test timeout success.")
 	}
 	/*for range tt.Datachan {
 		data := <-tt.Datachan
