@@ -1,4 +1,4 @@
-package autoconfig
+package ghcamodule
 
 import (
 	"crypto/md5"

@@ -1,4 +1,4 @@
-package timeoutmap
+package ghcamodule
 
 import (
 	//"fmt"
